@@ -1,0 +1,335 @@
+openapi: 3.0.3
+info:
+  title: Smart Home API
+  version: 1.0.0
+  description: API for managing smart home system
+  contact:
+    name: Warm Home Team
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8080/api/v2
+
+paths:
+  /api/v2/home/{id}:
+    get:
+      summary: Get home information
+      description: Returns detailed information about a home by its unique identifier
+      tags:
+        - Homes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the home
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      responses:
+        '200':
+          description: Home information successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '404':
+          description: Home with the specified identifier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Create or update home
+      description: Creates a new home with the specified identifier or updates an existing one
+      tags:
+        - Homes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the home
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      requestBody:
+        required: true
+        description: Data for creating or updating the home
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHomeRequest'
+      responses:
+        '200':
+          description: Home successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '201':
+          description: Home successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v2/home/{id}/locations:
+    get:
+      summary: Get list of home locations
+      description: Returns all locations (rooms) belonging to the specified home
+      tags:
+        - Locations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the home
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      responses:
+        '200':
+          description: List of locations successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsList'
+        '404':
+          description: Home with the specified identifier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Create or update home locations
+      description: Creates new locations or updates existing ones for the specified home
+      tags:
+        - Locations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the home
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      requestBody:
+        required: true
+        description: Data for creating or updating locations
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationsRequest'
+      responses:
+        '200':
+          description: Locations successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsList'
+        '201':
+          description: Locations successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsList'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Home with the specified identifier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Home:
+      type: object
+      description: Home information
+      required:
+        - ID
+        - UserID
+        - Address
+        - CreatedAt
+        - LastUpdated
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: Unique identifier of the home
+          example: 123
+        UserID:
+          type: integer
+          format: int64
+          description: Identifier of the home owner
+          example: 456
+        Address:
+          type: string
+          description: Full address of the home
+          example: "123 Main Street, Apt 5, New York, NY 10001"
+          maxLength: 255
+        CreatedAt:
+          type: string
+          format: date-time
+          description: Date and time when the home record was created
+          example: "2024-01-15T10:30:00Z"
+        LastUpdated:
+          type: string
+          format: date-time
+          description: Date and time when the home information was last updated
+          example: "2024-01-20T14:45:00Z"
+
+    CreateHomeRequest:
+      type: object
+      description: Data for creating a new home
+      required:
+        - UserID
+        - Address
+      properties:
+        UserID:
+          type: integer
+          format: int64
+          description: Identifier of the user who owns the home
+          example: 456
+        Address:
+          type: string
+          description: Full address of the home
+          example: "456 Oak Avenue, Suite 12, Los Angeles, CA 90210"
+          maxLength: 255
+
+    Location:
+      type: object
+      description: Information about a location (room) in the home
+      required:
+        - Name
+        - DeviceID
+      properties:
+        Name:
+          type: string
+          description: Name of the location (room)
+          example: "Living Room"
+          maxLength: 100
+        DeviceID:
+          type: integer
+          description: Unique identifier of the device installed in this location
+          example: 789
+
+    LocationsList:
+      type: object
+      description: List of home locations
+      required:
+        - locations
+      properties:
+        locations:
+          type: array
+          description: Array of home locations
+          items:
+            $ref: '#/components/schemas/Location'
+        total:
+          type: integer
+          description: Total number of locations in the home
+          example: 5
+
+    CreateLocationsRequest:
+      type: object
+      description: Data for creating or updating locations
+      required:
+        - locations
+      properties:
+        locations:
+          type: array
+          description: Array of locations to create or update
+          items:
+            type: object
+            description: Location data
+            required:
+              - Name
+              - DeviceID
+            properties:
+              Name:
+                type: string
+                description: Name of the location (room)
+                example: "Kitchen"
+                maxLength: 100
+              DeviceID:
+                type: integer
+                description: Unique identifier of the sensor for this location
+                example: 101
+
+    Error:
+      type: object
+      description: Error information
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "NOT_FOUND"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Home with the specified identifier not found"
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for user authorization
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Homes
+    description: Operations for managing homes
+  - name: Locations
+    description: Operations for managing locations (rooms) in homes

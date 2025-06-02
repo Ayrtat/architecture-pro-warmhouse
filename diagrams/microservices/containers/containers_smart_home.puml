@@ -1,0 +1,50 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Smart Home System - As-Is (Current State)
+
+Person(user, "User", "Smart home system user")
+
+System_Boundary(smartHomeDomain, "Smart Home Management") {
+    
+    System(userService, "User Service", "Manages user authentication and profiles")
+    System(homeService, "Home Management Service", "Maps users to homes and manages device associations")
+    System(deviceManagementService, "Device Management Service", "Manages device states and commands")
+    System(sensorService, "Sensor Service", "Legacy service which is up for smooth API migration")
+    System(telemetryService, "Telemetry Service", "Collects temperature data from devices")
+    
+    System(deviceDriver, "Device Driver", "Interacts with devices by incoming events")
+    System(webInterface, "Web Interface", "Web app for device control with authentication")
+    
+    SystemDb(userDb, "User Database", "PostgreSQL - User accounts and profiles")
+    SystemDb(homeDb, "Home Database", "PostgreSQL - Home configurations, user-home mappings, device associations")
+    SystemDb(deviceDb, "Device Database", "PostgreSQL - Device configurations and states")
+    SystemDb(telemetryDb, "Telemetry Database", "PostgreSQL - Temperature readings")
+    SystemDb(sensorDB, "Sensors Database", "PostgreSQL - Sensor data")
+}
+
+System_Ext(smartDevices, "Smart Devices", "Smart devices which managed with commands")
+System_Ext(sensors, "Sensors", "Temperature sensors")
+
+Rel(user, webInterface, "Controls devices")
+
+Rel(webInterface, userService, "Authentication")
+Rel(webInterface, homeService, "Gets user's homes and devices")
+Rel(webInterface, deviceManagementService, "Device control")
+Rel(webInterface, telemetryService, "Views temperature data")
+Rel(webInterface, sensorService, "Manages sensors")
+
+Rel(userService, userDb, "Stores user data")
+Rel(homeService, homeDb, "Stores home-user-device mappings")
+Rel(deviceManagementService, deviceDb, "Stores device data")
+Rel(telemetryService, telemetryDb, "Stores temperature readings")
+Rel(sensorService, sensorDB, "Stores sensor data")
+
+Rel(deviceManagementService, deviceDriver, "Emits events for device control")
+Rel(deviceDriver, smartDevices, "Sends commands", "Protocol")
+
+Rel(deviceManagementService, sensors, "Changes sensor's state", "Protocol")
+Rel(telemetryService, sensors, "Collects temperature", "Protocol")
+Rel(sensorService, sensors, "Change sensor's state and temperature", "Protocol")
+
+@enduml

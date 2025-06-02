@@ -1,0 +1,104 @@
+@startuml
+package "device_manager_service" {
+  package "models" {
+    class Device {
+      + id: uint64
+      + name: string
+      + type: DeviceType
+      + functionality: []DeviceCommandDesc
+      + metadata: map[string]string
+      + last_seen: time.Time
+      + created_at: time.Time
+      + updated_at: time.Time
+    }
+
+    class DeviceRegistration {
+      + name: string
+      + type: DeviceType
+      + metadata: map[string]string
+    }
+
+    class DeviceState {
+      + status: DeviceStatus
+      + last_updated: time.Time
+      + temperature: *float64
+    }
+
+    class DeviceCommand {
+      + name: string
+      + parameters: []interface{}
+    }
+
+    class DeviceCommandDesc {
+      + name: string
+      + description: string
+      + parameters: []CommandParameter
+    }
+
+    enum DeviceType {
+      Thermostat
+      Unknown
+    }
+
+    enum DeviceStatus {
+      Active
+      Inactive
+      Unknown
+    }
+  }
+
+  package "handlers" {
+    class DeviceHandler {
+      - deviceService: *DeviceService
+      + RegisterRoutes(router: *gin.RouterGroup)
+      + GetAllDevices(c: *gin.Context)
+      + GetDevice(c: *gin.Context)
+      + RegisterDevice(c: *gin.Context)
+      + UnregisterDevice(c: *gin.Context)
+      + GetDeviceState(c: *gin.Context)
+      + UpdateDeviceState(c: *gin.Context)
+      + SendCommand(c: *gin.Context)
+      + HealthCheck(c: *gin.Context)
+    }
+  }
+
+  package "services" {
+    class DeviceService {
+      - sensorService: *SensorService
+      + GetAllDevices(ctx: context.Context, filter: string): []Device
+      + GetDevice(ctx: context.Context, id: int): *Device
+      + RegisterDevice(ctx: context.Context, deviceReg: DeviceRegistration): *Device
+      + UnregisterDevice(ctx: context.Context, id: uint64): error
+      + GetDeviceState(ctx: context.Context, id: uint64): *DeviceState
+      + UpdateDeviceState(ctx: context.Context, id: int, state: DeviceState): error
+      + SendCommand(ctx: context.Context, id: int, command: DeviceCommand): error
+    }
+
+    class SensorService {
+      - db: *DB
+      - temperatureService: *TemperatureService
+      + GetAllSensors(ctx: context.Context): []Sensor
+      + GetSensorByID(ctx: context.Context, id: int): *Sensor
+      + CreateSensor(ctx: context.Context, sensor: SensorCreate): *Sensor
+      + DeleteSensor(ctx: context.Context, id: int): error
+      + UpdateSensorValue(ctx: context.Context, id: int, value: float64, status: string): error
+    }
+  }
+
+  package "db" {
+    class DB {
+      + GetSensorByID(id: int): *Sensor
+      + GetAllSensors(): []Sensor
+      + CreateSensor(sensor: SensorCreate): *Sensor
+      + DeleteSensor(id: int): error
+      + UpdateSensorValue(id: int, value: float64, status: string): error
+    }
+  }
+}
+
+DeviceHandler --> DeviceService : uses
+DeviceService --> SensorService : uses (adapts)
+SensorService --> DB : uses
+SensorService --> TemperatureService : uses
+
+@enduml

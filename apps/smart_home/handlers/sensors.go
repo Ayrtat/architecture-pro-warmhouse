@@ -1,9 +1,6 @@
 package handlers
 
 import (
-	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -16,15 +13,13 @@ import (
 
 // SensorHandler handles sensor-related requests
 type SensorHandler struct {
-	DB                 *db.DB
-	TemperatureService *services.TemperatureService
+	sensorService *services.SensorService
 }
 
 // NewSensorHandler creates a new SensorHandler
 func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
 	return &SensorHandler{
-		DB:                 db,
-		TemperatureService: temperatureService,
+		sensorService: services.NewSensorService(db, temperatureService),
 	}
 }
 
@@ -44,26 +39,10 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 
 // GetSensors handles GET /api/v1/sensors
 func (h *SensorHandler) GetSensors(c *gin.Context) {
-	sensors, err := h.DB.GetSensors(context.Background())
+	sensors, err := h.sensorService.GetAllSensors(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	// Update temperature sensors with real-time data from the external API
-	for i, sensor := range sensors {
-		if sensor.Type == models.Temperature {
-			tempData, err := h.TemperatureService.GetTemperatureByID(fmt.Sprintf("%d", sensor.ID))
-			if err == nil {
-				// Update sensor with real-time data
-				sensors[i].Value = tempData.Value
-				sensors[i].Status = tempData.Status
-				sensors[i].LastUpdated = tempData.Timestamp
-				log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
-			} else {
-				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
-			}
-		}
 	}
 
 	c.JSON(http.StatusOK, sensors)
@@ -77,24 +56,10 @@ func (h *SensorHandler) GetSensorByID(c *gin.Context) {
 		return
 	}
 
-	sensor, err := h.DB.GetSensorByID(context.Background(), id)
+	sensor, err := h.sensorService.GetSensorByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Sensor not found"})
 		return
-	}
-
-	// If this is a temperature sensor, fetch real-time data from the temperature API
-	if sensor.Type == models.Temperature {
-		tempData, err := h.TemperatureService.GetTemperatureByID(fmt.Sprintf("%d", sensor.ID))
-		if err == nil {
-			// Update sensor with real-time data
-			sensor.Value = tempData.Value
-			sensor.Status = tempData.Status
-			sensor.LastUpdated = tempData.Timestamp
-			log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
-		} else {
-			log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
-		}
 	}
 
 	c.JSON(http.StatusOK, sensor)
@@ -108,24 +73,15 @@ func (h *SensorHandler) GetTemperatureByLocation(c *gin.Context) {
 		return
 	}
 
-	// Fetch temperature data from the external API
-	tempData, err := h.TemperatureService.GetTemperature(location)
+	sensor, err := h.sensorService.GetTemperatureByLocation(c.Request.Context(), location)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("Failed to fetch temperature data: %v", err),
+			"error": "Failed to fetch temperature data: " + err.Error(),
 		})
 		return
 	}
 
-	// Return the temperature data
-	c.JSON(http.StatusOK, gin.H{
-		"location":    tempData.Location,
-		"value":       tempData.Value,
-		"unit":        tempData.Unit,
-		"status":      tempData.Status,
-		"timestamp":   tempData.Timestamp,
-		"description": tempData.Description,
-	})
+	c.JSON(http.StatusOK, sensor)
 }
 
 // CreateSensor handles POST /api/v1/sensors
@@ -136,7 +92,7 @@ func (h *SensorHandler) CreateSensor(c *gin.Context) {
 		return
 	}
 
-	sensor, err := h.DB.CreateSensor(context.Background(), sensorCreate)
+	sensor, err := h.sensorService.CreateSensor(c.Request.Context(), sensorCreate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -159,7 +115,7 @@ func (h *SensorHandler) UpdateSensor(c *gin.Context) {
 		return
 	}
 
-	sensor, err := h.DB.UpdateSensor(context.Background(), id, sensorUpdate)
+	sensor, err := h.sensorService.UpdateSensor(c.Request.Context(), id, sensorUpdate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -176,7 +132,7 @@ func (h *SensorHandler) DeleteSensor(c *gin.Context) {
 		return
 	}
 
-	err = h.DB.DeleteSensor(context.Background(), id)
+	err = h.sensorService.DeleteSensor(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -203,7 +159,7 @@ func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
 		return
 	}
 
-	err = h.DB.UpdateSensorValue(context.Background(), id, request.Value, request.Status)
+	err = h.sensorService.UpdateSensorValue(c.Request.Context(), id, request.Value, request.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

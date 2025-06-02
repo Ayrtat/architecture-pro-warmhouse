@@ -1,0 +1,21 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title User Management Service - Component Diagram
+
+Container(userService, "User Management Service") {
+    Component(userApi, "User API Controller", "REST API", "Handles HTTP requests for user management operations")
+    
+    Component(userManager, "User Manager", "Business Logic", "Manages user registration, authentication, and profile operations")
+    
+    Component(userRepository, "User Repository", "Data Access", "CRUD operations for users, authentication, and profile data")
+}
+
+ContainerDb(userDb, "User Database", "PostgreSQL", "Stores user accounts, credentials, profiles, and preferences")
+
+Rel(userApi, userManager, "Delegates user operations")
+Rel(userManager, userRepository, "Data operations")
+
+Rel(userRepository, userDb, "CRUD operations")
+
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+package "telemetry_service" {
+  package "models" {
+    class TelemetryData {
+      + device_id: uint64
+      + timestamp: time.Time
+      + state: DeviceState
+    }
+
+    class DeviceState {
+      + status: DeviceStatus
+      + last_updated: time.Time
+      + temperature: *float64
+    }
+
+    enum DeviceStatus {
+      Active
+      Inactive
+      Unknown
+    }
+  }
+
+  package "handlers" {
+    class TelemetryHandler {
+      - telemetryService: *TelemetryService
+      
+      + NewTelemetryHandler(telemetryService: *TelemetryService): *TelemetryHandler
+      + RegisterRoutes(router: *gin.RouterGroup)
+      + GetDeviceTelemetry(c: *gin.Context)
+      + GetAllDevicesTelemetry(c: *gin.Context)
+      + HealthCheck(c: *gin.Context)
+    }
+  }
+
+  package "services" {
+    class TelemetryService {
+      - currentDataMtx: sync.RWMutex
+      - currentData: map[uint64]*TelemetryData
+      - temperatureService: *TemperatureService
+      - sensorService: *SensorService
+
+      + NewTelemetryService(temperatureService: *TemperatureService, sensorService: *SensorService): *TelemetryService
+      + GetDeviceTelemetry(deviceID: uint64): *TelemetryData
+      + GetAllDevicesTelemetry(): map[uint64]*TelemetryData
+      - startMetricsCollection()
+      - collectMetrics()
+    }
+
+    class TemperatureService {
+      - baseURL: string
+      - httpClient: *http.Client
+   
+      + GetTemperature(location: string): *TemperatureResponse
+      + GetTemperatureByID(sensorID: string): *TemperatureResponse
+    }
+  }
+
+  package "db" {
+    class DB {
+      + GetSensorByID(id: int): Sensor
+      + GetAllSensors(): []Sensor
+    }
+  }
+}
+
+TelemetryHandler --> TelemetryService : uses
+TelemetryService --> TemperatureService : uses
+TelemetryService --> DB : uses
+
+
+@enduml

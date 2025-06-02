@@ -1,0 +1,52 @@
+@startuml device_management_service_c4_code_diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Device Management Service - Code Component Diagram
+
+Container(deviceManagementService, "Device Management Service") {
+    Component(deviceController, "Device API Controller", "Go", "Device registration")
+    Component(stateController, "State API Controller", "Go", "Device state change")
+    Component(commandController, "Comman API Controller", "Go", "Publishes commands to smart devices")
+    
+    Component(serviceLayer, "ServiceLayer", "Go", "Business logic for command processing")
+    
+    Component(sensorService, "SensorService", "Go", "Business logic for device operations, state management and sensor operations")
+    
+    Component(sensorRepository, "SensorRepository", "Go", "Data access layer for sensors")
+    Component(deviceRepository, "DeviceRepository", "Go", "Data access layer for devices")
+    Component(stateRepository, "StateRepository", "Go", "Data access layer for device states")
+    Component(commandRepository, "CommandRepository", "Go", "Data access layer for commands")
+}
+
+ContainerDb(sensorDb, "SensorDB", "PostgreSQL", "Stores sensor data")
+ContainerDb(deviceDB, "DeviceDB", "PostgreSQL", "Stores device information")
+
+System_Ext(eventBus, "Event bus", "Receive event about device state changes or commands")
+System_Ext(sensors, "Sensors", "Temperature sensors")
+
+Container(APIGateway, "APIGateway", "AGW", "API router")
+
+Rel(APIGateway, deviceController, "Manages devices", "REST API")
+Rel(APIGateway, commandController, "Sends commands to devices", "REST API")
+Rel(APIGateway, stateController, "Changes devices' state", "REST API")
+
+Rel(deviceController, sensorService, "uses", "Business logic")
+Rel(deviceController, serviceLayer, "uses", "Business logic")
+Rel(stateController, sensorService, "uses", "Business logic")
+Rel(stateController, serviceLayer, "uses", "Business logic")
+Rel(commandController, serviceLayer, "uses", "Business logic")
+
+Rel(sensorService, sensorRepository, "uses", "Data access")
+Rel(sensorService, sensors, "uses", "Drives sensors")
+Rel(serviceLayer, deviceRepository, "uses", "Data access")
+Rel(serviceLayer, stateRepository, "uses", "Data access")
+Rel(serviceLayer, commandRepository, "uses", "Data access")
+
+Rel(sensorRepository, sensorDb, "queries", "SQL")
+Rel(deviceRepository, deviceDB, "queries", "SQL")
+Rel(stateRepository, deviceDB, "Publishes state changes to DB", "SQL")
+Rel(commandRepository, deviceDB, "Publishes commands to DB", "SQL")
+
+Rel(serviceLayer, eventBus, "uses", "Emits events")
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Smart Home System Diagram
+
+Person(customer, "Smart Home Customer", "House owner")
+
+System(smart_home_service, "Smart Home System", "Allows user to control sensors and get temperature info")
+
+System_Ext(smart_devices_system, "Smart Devices System", "Manages smart devices")
+System_Ext(sensors, "Sensor API System", "Manages sensors and read temperature")
+
+Rel(customer, smart_home_service, "Uses")
+Rel(smart_home_service, smart_devices_system, "Uses")
+Rel(smart_home_service, sensors, "Uses")
+
+@enduml

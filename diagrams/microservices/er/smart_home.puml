@@ -1,0 +1,71 @@
+@startuml
+
+entity "User" as user {
+  + ID [PK]
+  --
+  Name : varchar(50)
+  Email : varchar(100) [UQ]
+  CreatedAt : date
+  LastUpdated : date
+}
+
+entity "Home" as home {
+  + ID [PK]
+  + UserID [FK]
+  --
+  Address : varchar(100)
+  CreatedAt : date
+  LastUpdated : date
+}
+
+entity "Locations" as locations {
+  + ID [PK]
+  + HomeID [FK]
+  --
+  Name : varchar(100)
+  DeviceID : int
+  CreatedAt : date
+  LastUpdated : date
+}
+
+entity "Devices" as devices {
+  + ID [PK]
+  + UserID [FK]
+  + LocationID [FK] [UQ]
+  --
+  SerialNumber: varchar(100)
+  Type: varchar(100)
+  Functionality: varchar(100)
+  Metadata: varchar(100)
+  CreatedAt : date
+  LastUpdated : date
+}
+
+entity "DeviceStates" as deviceStates {
+  + ID [PK]
+  + DeviceID [FK]
+  --
+  Status : varchar(100)
+  Temperature : float64
+  Unit : string
+  CreatedAt : date
+  LastUpdated : date
+}
+
+entity "DeviceCommands" as commands {
+  + ID [PK]
+  + DeviceID [FK]
+  --
+  Cmd : varchar(200)
+  CreatedAt : date
+  ExecutedAt : date
+}
+
+user ||--o{ home : "owns"
+home ||--o{ locations : "contains"
+user ||--o{ devices : "owns"
+locations ||--|| devices : "contains exactly one"
+devices ||--o{ deviceStates : "has states"
+devices ||--o{ commands : "receives commands"
+
+@enduml

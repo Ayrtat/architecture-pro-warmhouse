@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: Smart Home Telemetry API
+  version: 1.0.0
+  description: API for accessing device telemetry data.
+  contact:
+    name: Warm Home Team
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8080/api/v2
+
+paths:
+  /telemetry/health:
+    get:
+      summary: Health check endpoint
+      description: Check if the telemetry service is healthy
+      tags: [health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: boolean
+                  message:
+                    type: string
+
+  /telemetry/device/{id}:
+    get:
+      summary: Get device telemetry
+      description: Get current telemetry data for a specific device
+      tags: [telemetry]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Device ID
+      responses:
+        '200':
+          description: Device telemetry data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryData'
+        '400':
+          description: Invalid device ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/devices:
+    get:
+      summary: Get all devices telemetry
+      description: Get current telemetry data for all devices
+      tags: [telemetry]
+      responses:
+        '200':
+          description: All devices telemetry data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_devices:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+                  devices:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/TelemetryData'
+
+components:
+  schemas:
+    TelemetryData:
+      type: object
+      properties:
+        device_id:
+          type: integer
+          format: uint64
+        timestamp:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/DeviceState'
+
+    DeviceState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, inactive, unknown]
+        last_updated:
+          type: string
+          format: date-time
+        temperature:
+          type: number
+          format: float
+        temperature_unit:
+          type: string
+          enum: [celsius, fahrenheit]
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+        message:
+          type: string 

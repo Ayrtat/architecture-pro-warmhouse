@@ -43,11 +43,23 @@ func main() {
 	})
 
 	// API routes
-	apiRoutes := router.Group("/api/v1")
+	apiRoutes := router.Group("/api/v2")
+	apiRoutesLegacy := router.Group("/api/v1")
 
 	// Register sensor routes
 	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
-	sensorHandler.RegisterRoutes(apiRoutes)
+	sensorHandler.RegisterRoutes(apiRoutesLegacy)
+
+	deviceService := services.NewDeviceService(database, temperatureService)
+	telemetryService := services.NewTelemetryService(database, temperatureService)
+
+	{
+		deviceHandler := handlers.NewDeviceHandler(deviceService)
+		deviceHandler.RegisterRoutes(apiRoutes)
+
+		telemetryHandler := handlers.NewTelemetryHandler(telemetryService)
+		telemetryHandler.RegisterRoutes(apiRoutes)
+	}
 
 	// Start server
 	srv := &http.Server{
