@@ -3,8 +3,6 @@
 
 title Telemetry Service - Component Diagram
 
-Container_Ext(temperatureService, "Temperature API", "Service", "Gets sensors' temperature")
-
 Container(telemetryService, "Telemetry Service") {
     Component(telemetryApi, "Telemetry API Controller", "REST API", "Handles HTTP requests for telemetry data retrieval")
     Component(telemetryCollector, "Telemetry Collector", "Background Service", "Collects telemetry data via Device Management Service")
@@ -12,13 +10,16 @@ Container(telemetryService, "Telemetry Service") {
     Component(telemetryRepository, "Telemetry Repository", "Data Access", "CRUD operations for telemetry data")
 }
 
+System_Ext(eventBus, "MQTT", "Interacts with devices by event bus: receive data and sends commands")
+
 Container(APIGateway, "APIGateway", "AGW", "API router")
 
 ContainerDb(telemetryDb, "Telemetry Database", "PostgreSQL", "Stores telemetry data")
 Rel(telemetryApi, telemetryRepository, "Queries telemetry data")
 
 Rel(APIGateway, telemetryApi, "Request telemetry data")
-Rel(telemetryCollector, temperatureService, "Collects telemetry data", "HTTP/gRPC")
+Rel(telemetryCollector, eventBus, "Collects telemetry data", "MQTT")
+Rel(eventBus, telemetryCollector, "Sends data", "MQTT")
 Rel(telemetryCollector, telemetryProcessor, "Sends raw telemetry")
 Rel(telemetryProcessor, telemetryRepository, "Stores processed telemetry")
 

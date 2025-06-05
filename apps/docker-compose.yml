@@ -11,7 +11,6 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      #- postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -60,6 +59,38 @@ services:
       - TEMPERATURE_API_URL=http://temperature-api:8081
     ports:
       - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  devices:
+    build:
+      context: ./smart_home_decomposed
+      dockerfile: ./.docker/Dockerfile.devices
+    container_name: smarthome-devices
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temperature-api:
+        condition: service_started
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  telemetry:
+    build:
+      context: ./smart_home_decomposed
+      dockerfile: ./.docker/Dockerfile.telemetry
+    container_name: smarthome-telemetry
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temperature-api:
+        condition: service_started
+    ports:
+      - "8083:8080"
     restart: unless-stopped
     networks:
       - smarthome-network

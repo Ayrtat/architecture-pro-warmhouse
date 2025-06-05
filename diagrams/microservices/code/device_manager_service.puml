@@ -50,6 +50,7 @@ package "device_manager_service" {
   package "handlers" {
     class DeviceHandler {
       - deviceService: *DeviceService
+      + NewDeviceHandler(deviceService: *DeviceService): *DeviceHandler
       + RegisterRoutes(router: *gin.RouterGroup)
       + GetAllDevices(c: *gin.Context)
       + GetDevice(c: *gin.Context)
@@ -60,11 +61,26 @@ package "device_manager_service" {
       + SendCommand(c: *gin.Context)
       + HealthCheck(c: *gin.Context)
     }
+
+    class SensorHandler {
+      - sensorService: *SensorService
+      + NewSensorHandler(db: *DB, temperatureService: *TemperatureService): *SensorHandler
+      + RegisterRoutes(router: *gin.RouterGroup)
+      + GetSensors(c: *gin.Context)
+      + GetSensorByID(c: *gin.Context)
+      + CreateSensor(c: *gin.Context)
+      + UpdateSensor(c: *gin.Context)
+      + DeleteSensor(c: *gin.Context)
+      + UpdateSensorValue(c: *gin.Context)
+      + GetTemperatureByLocation(c: *gin.Context)
+    }
   }
 
   package "services" {
     class DeviceService {
-      - sensorService: *SensorService
+      - devices: map[uint64]Device
+      - mu: sync.RWMutex
+      + NewDeviceService(): *DeviceService
       + GetAllDevices(ctx: context.Context, filter: string): []Device
       + GetDevice(ctx: context.Context, id: int): *Device
       + RegisterDevice(ctx: context.Context, deviceReg: DeviceRegistration): *Device
@@ -77,11 +93,14 @@ package "device_manager_service" {
     class SensorService {
       - db: *DB
       - temperatureService: *TemperatureService
+      + NewSensorService(db: *DB, temperatureService: *TemperatureService): *SensorService
       + GetAllSensors(ctx: context.Context): []Sensor
       + GetSensorByID(ctx: context.Context, id: int): *Sensor
       + CreateSensor(ctx: context.Context, sensor: SensorCreate): *Sensor
+      + UpdateSensor(ctx: context.Context, id: int, update: SensorUpdate): *Sensor
       + DeleteSensor(ctx: context.Context, id: int): error
       + UpdateSensorValue(ctx: context.Context, id: int, value: float64, status: string): error
+      + GetTemperatureByLocation(ctx: context.Context, location: string): *Sensor
     }
   }
 
@@ -90,6 +109,7 @@ package "device_manager_service" {
       + GetSensorByID(id: int): *Sensor
       + GetAllSensors(): []Sensor
       + CreateSensor(sensor: SensorCreate): *Sensor
+      + UpdateSensor(id: int, update: SensorUpdate): *Sensor
       + DeleteSensor(id: int): error
       + UpdateSensorValue(id: int, value: float64, status: string): error
     }
@@ -97,7 +117,7 @@ package "device_manager_service" {
 }
 
 DeviceHandler --> DeviceService : uses
-DeviceService --> SensorService : uses (adapts)
+SensorHandler --> SensorService : uses
 SensorService --> DB : uses
 SensorService --> TemperatureService : uses
 

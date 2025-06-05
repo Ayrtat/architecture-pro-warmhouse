@@ -9,16 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"smarthome/db"
-	"smarthome/handlers"
-	"smarthome/services"
+	"smarthome/devices/db"
+	"smarthome/devices/handlers"
+	"smarthome/devices/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Set up database connection
-	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/smarthome")
+	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@smarthome-postgres:5432/smarthome")
 	database, err := db.New(dbURL)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
@@ -43,11 +42,17 @@ func main() {
 	})
 
 	// API routes
-	apiRoutes := router.Group("/api/v1")
+	apiRoutes := router.Group("/api/v2")
+	apiRoutesLegacy := router.Group("/api/v1")
 
-	// Register sensor routes
-	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
-	sensorHandler.RegisterRoutes(apiRoutes)
+	deviceService := services.NewDeviceService()
+	{
+		deviceHandler := handlers.NewDeviceHandler(deviceService)
+		deviceHandler.RegisterRoutes(apiRoutes)
+
+		sensorsHandler := handlers.NewSensorHandler(database, temperatureService)
+		sensorsHandler.RegisterRoutes(apiRoutesLegacy)
+	}
 
 	// Start server
 	srv := &http.Server{

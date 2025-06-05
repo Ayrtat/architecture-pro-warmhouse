@@ -1,22 +1,10 @@
 @startuml
 package "telemetry_service" {
   package "models" {
-    class TelemetryData {
-      + device_id: uint64
+    class SensorTelemetry {
+      + sensor_id: uint64
       + timestamp: time.Time
-      + state: DeviceState
-    }
-
-    class DeviceState {
-      + status: DeviceStatus
-      + last_updated: time.Time
       + temperature: *float64
-    }
-
-    enum DeviceStatus {
-      Active
-      Inactive
-      Unknown
     }
   }
 
@@ -26,46 +14,39 @@ package "telemetry_service" {
       
       + NewTelemetryHandler(telemetryService: *TelemetryService): *TelemetryHandler
       + RegisterRoutes(router: *gin.RouterGroup)
-      + GetDeviceTelemetry(c: *gin.Context)
-      + GetAllDevicesTelemetry(c: *gin.Context)
+      + GetSensorTelemetry(c: *gin.Context)
+      + GetAllSensorsTelemetry(c: *gin.Context)
       + HealthCheck(c: *gin.Context)
     }
   }
 
   package "services" {
     class TelemetryService {
-      - currentDataMtx: sync.RWMutex
-      - currentData: map[uint64]*TelemetryData
+      - mtx: sync.RWMutex
+      - currentDevicesData: map[uint64]*SensorTelemetry
+      - currentSensorsData: map[uint64]*SensorTelemetry
+      - sensorsBaseURL: string
       - temperatureService: *TemperatureService
-      - sensorService: *SensorService
+      - httpClient: *http.Client
 
-      + NewTelemetryService(temperatureService: *TemperatureService, sensorService: *SensorService): *TelemetryService
-      + GetDeviceTelemetry(deviceID: uint64): *TelemetryData
-      + GetAllDevicesTelemetry(): map[uint64]*TelemetryData
+      + NewTelemetryService(sensorsBaseURL: string, temperatureBaseURL: string): *TelemetryService
+      + GetSensorTelemetry(sensorID: uint64): *SensorTelemetry
+      + GetAllSensorsTelemetry(): map[uint64]*SensorTelemetry
       - startMetricsCollection()
-      - collectMetrics()
+      - collectSensorMetrics()
     }
 
     class TemperatureService {
       - baseURL: string
       - httpClient: *http.Client
    
-      + GetTemperature(location: string): *TemperatureResponse
+      + NewTemperatureService(baseURL: string): *TemperatureService
       + GetTemperatureByID(sensorID: string): *TemperatureResponse
-    }
-  }
-
-  package "db" {
-    class DB {
-      + GetSensorByID(id: int): Sensor
-      + GetAllSensors(): []Sensor
     }
   }
 }
 
 TelemetryHandler --> TelemetryService : uses
 TelemetryService --> TemperatureService : uses
-TelemetryService --> DB : uses
-
 
 @enduml

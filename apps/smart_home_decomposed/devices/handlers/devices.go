@@ -3,8 +3,8 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"smarthome/models"
-	"smarthome/services"
+	"smarthome/devices/models"
+	"smarthome/devices/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

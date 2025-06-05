@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"smarthome/db"
-	"smarthome/models"
+	"smarthome/devices/db"
+	"smarthome/devices/models"
 )
 
 // SensorService handles sensor business logic

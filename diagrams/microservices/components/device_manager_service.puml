@@ -4,9 +4,10 @@
 title Device Management Service - Code Component Diagram
 
 Container(deviceManagementService, "Device Management Service") {
+    Component(sensorController, "Sensor API Controller", "Go", "Sensor management (Legacy)")
     Component(deviceController, "Device API Controller", "Go", "Device registration")
     Component(stateController, "State API Controller", "Go", "Device state change")
-    Component(commandController, "Comman API Controller", "Go", "Publishes commands to smart devices")
+    Component(commandController, "Command API Controller", "Go", "Publishes commands to smart devices")
     
     Component(serviceLayer, "ServiceLayer", "Go", "Business logic for command processing")
     
@@ -21,23 +22,23 @@ Container(deviceManagementService, "Device Management Service") {
 ContainerDb(sensorDb, "SensorDB", "PostgreSQL", "Stores sensor data")
 ContainerDb(deviceDB, "DeviceDB", "PostgreSQL", "Stores device information")
 
-System_Ext(eventBus, "Event bus", "Receive event about device state changes or commands")
+System_Ext(eventBus, "MQTT", "Interacts with devices by event bus: receive data and sends commands")
 System_Ext(sensors, "Sensors", "Temperature sensors")
+System_Ext(smartDevices, "Smart Devices", "IoT devices that receive commands and send data")
 
 Container(APIGateway, "APIGateway", "AGW", "API router")
 
 Rel(APIGateway, deviceController, "Manages devices", "REST API")
 Rel(APIGateway, commandController, "Sends commands to devices", "REST API")
 Rel(APIGateway, stateController, "Changes devices' state", "REST API")
+Rel(APIGateway, sensorController, "Manages sensors", "REST API")
 
-Rel(deviceController, sensorService, "uses", "Business logic")
+Rel(sensorController, sensorService, "uses", "Business logic")
 Rel(deviceController, serviceLayer, "uses", "Business logic")
-Rel(stateController, sensorService, "uses", "Business logic")
 Rel(stateController, serviceLayer, "uses", "Business logic")
 Rel(commandController, serviceLayer, "uses", "Business logic")
 
 Rel(sensorService, sensorRepository, "uses", "Data access")
-Rel(sensorService, sensors, "uses", "Drives sensors")
 Rel(serviceLayer, deviceRepository, "uses", "Data access")
 Rel(serviceLayer, stateRepository, "uses", "Data access")
 Rel(serviceLayer, commandRepository, "uses", "Data access")
@@ -48,5 +49,10 @@ Rel(stateRepository, deviceDB, "Publishes state changes to DB", "SQL")
 Rel(commandRepository, deviceDB, "Publishes commands to DB", "SQL")
 
 Rel(serviceLayer, eventBus, "uses", "Emits events")
+Rel(sensorService, eventBus, "uses", "Emits events")
+Rel(eventBus, smartDevices, "sends commands and data", "MQTT")
+Rel(smartDevices, eventBus, "sends data", "MQTT")
+Rel(eventBus, sensors, "sends data", "MQTT")
+Rel(sensors, eventBus, "sends data", "MQTT")
 
 @enduml

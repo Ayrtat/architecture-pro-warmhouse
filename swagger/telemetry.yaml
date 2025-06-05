@@ -33,6 +33,55 @@ paths:
                   message:
                     type: string
 
+  /telemetry/sensors/{id}:
+    get:
+      summary: Get sensor telemetry
+      description: Get current telemetry data for a specific sensor
+      tags: [telemetry]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Sensor ID
+      responses:
+        '200':
+          description: Sensor telemetry data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorTelemetry'
+        '400':
+          description: Invalid sensor ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetry/sensors:
+    get:
+      summary: Get all sensors telemetry
+      description: Get current telemetry data for all sensors
+      tags: [telemetry]
+      responses:
+        '200':
+          description: All sensors telemetry data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+                  sensors:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/SensorTelemetry'
+
   /telemetry/device/{id}:
     get:
       summary: Get device telemetry
@@ -72,7 +121,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  total_devices:
+                  total:
                     type: integer
                   timestamp:
                     type: string
