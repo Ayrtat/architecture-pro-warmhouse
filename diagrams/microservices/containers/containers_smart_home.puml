@@ -1,0 +1,76 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Smart Home System
+
+' Smart Home
+
+Person(user, "User", "Smart home system user")
+
+System_Boundary(smartHomeDomain, "Smart Home Management") {
+    
+    System(userService, "User Service", "Manages user authentication and profiles")
+    System(homeService, "Home Management Service", "Maps users to homes and manages device associations")
+    System(deviceManagementService, "Device Management Service", "Manages device states and commands")
+    System(telemetryService, "Telemetry Service", "Collects temperature data from devices")
+    
+    System(webInterface, "Web Interface", "Web app for device control with authentication")
+    
+    SystemDb(userDb, "User Database", "PostgreSQL - User accounts and profiles")
+    SystemDb(homeDb, "Home Database", "PostgreSQL - Home configurations, user-home mappings, device associations")
+    SystemDb(deviceDb, "Device Database", "PostgreSQL - Device configurations and states")
+    SystemDb(telemetryDb, "Telemetry Database", "PostgreSQL - Temperature readings")
+    SystemDb(sensorDB, "Sensors Database", "PostgreSQL - Sensor data")
+}
+
+System_Ext(mqttBroker, "MQTT Broker", "External message broker for device communication")
+System_Ext(smartDevices, "Smart Devices", "Smart devices which managed with commands")
+System_Ext(sensors, "Sensors", "Temperature sensors")
+
+Rel(user, webInterface, "Controls devices")
+
+Rel(webInterface, userService, "Authentication")
+Rel(webInterface, homeService, "Gets user's homes and devices")
+Rel(webInterface, deviceManagementService, "Device control")
+Rel(webInterface, telemetryService, "Views temperature data")
+
+Rel(userService, userDb, "Stores user data")
+Rel(homeService, homeDb, "Stores home-user-device mappings")
+Rel(deviceManagementService, deviceDb, "Stores device data")
+Rel(deviceManagementService, sensorDB, "Stores sensor data")
+Rel(telemetryService, telemetryDb, "Stores temperature readings")
+
+Rel(deviceManagementService, mqttBroker, "Publishes device commands", "MQTT")
+Rel(mqttBroker, smartDevices, "Sends commands", "MQTT Protocol")
+
+Rel(mqttBroker, sensors, "Sends commands", "MQTT Protocol")
+Rel(sensors, mqttBroker, "Sends data", "MQTT Protocol")
+
+Rel(telemetryService, mqttBroker, "Fetch metrics", "MQTT Protocol")
+
+' Sales
+
+Person(customer, "Customer", "Person browsing and purchasing smart home devices")
+
+System_Boundary(salesDomain, "Sales Management") {
+    System(salesInterface, "Sales Interface", "Web interface for browsing catalog and creating kits")
+    System(catalogService, "Catalog Service", "Manages device catalog and specifications")
+    System(kitAssemblyService, "Kit Assembly Service", "Creates and manages custom device kits")
+
+    SystemDb(catalogDb, "Catalog Database", "Device specifications and catalog data")
+    SystemDb(kitDb, "Kit Database", "Custom kit configurations")
+}
+
+System_Ext(partnerEcosystems, "Partner Ecosystems", "External device manufacturer APIs")
+
+Rel(customer, salesInterface, "Browses catalog and creates kits")
+
+Rel(salesInterface, catalogService, "Gets device catalog")
+Rel(salesInterface, kitAssemblyService, "Creates custom kits")
+
+Rel(catalogService, catalogDb, "Stores device catalog")
+Rel(catalogService, partnerEcosystems, "Syncs device data", "API")
+
+Rel(kitAssemblyService, kitDb, "Stores kit configurations")
+
+@enduml

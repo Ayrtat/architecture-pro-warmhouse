@@ -1,0 +1,21 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Home Management Service - Component Diagram
+
+Container(homeService, "Home Management Service") {
+    Component(homeApi, "Home API Controller", "REST API", "Handles HTTP requests for home management operations")
+    
+    Component(homeManager, "Home Manager", "Business Logic", "Manages home-user associations and device mappings")
+    
+    Component(homeRepository, "Home Repository", "Data Access", "CRUD operations for homes, users, and device associations")
+}
+
+ContainerDb(homeDb, "Home Database", "PostgreSQL", "Stores homes, user-home mappings, device associations")
+
+Rel(homeApi, homeManager, "Delegates business operations")
+Rel(homeManager, homeRepository, "Data operations")
+
+Rel(homeRepository, homeDb, "CRUD operations")
+
+@enduml

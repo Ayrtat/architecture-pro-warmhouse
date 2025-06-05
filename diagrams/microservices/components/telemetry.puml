@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Telemetry Service - Component Diagram
+
+Container(telemetryService, "Telemetry Service") {
+    Component(telemetryApi, "Telemetry API Controller", "REST API", "Handles HTTP requests for telemetry data retrieval")
+    Component(telemetryCollector, "Telemetry Collector", "Background Service", "Collects telemetry data via Device Management Service")
+    Component(telemetryProcessor, "Telemetry Processor", "Business Logic", "Processes and validates telemetry data")
+    Component(telemetryRepository, "Telemetry Repository", "Data Access", "CRUD operations for telemetry data")
+}
+
+System_Ext(eventBus, "MQTT", "Interacts with devices by event bus: receive data and sends commands")
+
+Container(APIGateway, "APIGateway", "AGW", "API router")
+
+ContainerDb(telemetryDb, "Telemetry Database", "PostgreSQL", "Stores telemetry data")
+Rel(telemetryApi, telemetryRepository, "Queries telemetry data")
+
+Rel(APIGateway, telemetryApi, "Request telemetry data")
+Rel(telemetryCollector, eventBus, "Collects telemetry data", "MQTT")
+Rel(eventBus, telemetryCollector, "Sends data", "MQTT")
+Rel(telemetryCollector, telemetryProcessor, "Sends raw telemetry")
+Rel(telemetryProcessor, telemetryRepository, "Stores processed telemetry")
+
+Rel(telemetryRepository, telemetryDb, "CRUD operations")
+
+@enduml
